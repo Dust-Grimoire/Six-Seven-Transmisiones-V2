@@ -1,14 +1,7 @@
-import React from 'react';
-
-import EnConstrucción from '../components/ui/EnConstruccion';
+import EnConstruccion from '../components/ui/EnConstruccion.jsx';
 
 function Inventario() {
-  return (
-    <div>
-      <h1>Inventario</h1>
-      <EnConstrucción nombreModulo="Inventario"/>
-    </div>
-  );
+  return <EnConstruccion nombreModulo="Inventario" />;
 }
 
 export default Inventario;

@@ -1,14 +1,7 @@
-import React from 'react';
-
-import EnConstrucción from '../components/ui/EnConstruccion';
+import EnConstruccion from '../components/ui/EnConstruccion.jsx';
 
 function Usuarios() {
-  return (
-    <div>
-      <h1>Usuarios</h1>
-      <EnConstrucción nombreModulo="Usuarios"/>
-    </div>
-  );
+  return <EnConstruccion nombreModulo="Usuarios" />;
 }
 
 export default Usuarios;

@@ -1,14 +1,7 @@
-import React from 'react';
-
-import EnConstrucción from '../components/ui/EnConstruccion';
+import EnConstruccion from '../components/ui/EnConstruccion.jsx';
 
 function Personal() {
-  return (
-    <div>
-      <h1>Personal</h1>
-      <EnConstrucción nombreModulo="Personal"/>
-    </div>
-  );
+  return <EnConstruccion nombreModulo="Personal" />;
 }
 
 export default Personal;

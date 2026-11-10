@@ -1,14 +1,7 @@
-import React from 'react';
-
-import EnConstrucción from '../components/ui/EnConstruccion';
+import EnConstruccion from '../components/ui/EnConstruccion.jsx';
 
 function Financiero() {
-  return (
-    <div>
-      <h1>Financiero</h1>
-      <EnConstrucción nombreModulo="Financiero"/>
-    </div>
-  );
+  return <EnConstruccion nombreModulo="Financiero" />;
 }
 
 export default Financiero;
