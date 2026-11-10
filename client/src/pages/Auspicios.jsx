@@ -1,14 +1,7 @@
-import React from 'react';
-
-import EnConstrucción from '../components/ui/EnConstruccion';
+import EnConstruccion from '../components/ui/EnConstruccion.jsx';
 
 function Auspicios() {
-  return (
-    <div>
-      <h1>Auspicios</h1>
-      <EnConstrucción nombreModulo="Auspicios"/>
-    </div>
-  );
+  return <EnConstruccion nombreModulo="Auspicios" />;
 }
 
 export default Auspicios;

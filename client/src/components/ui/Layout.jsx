@@ -1,30 +1,23 @@
-import React from 'react';
+import { Layout as AntLayout } from 'antd';
 import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar'; 
+import Sidebar from './Sidebar.jsx';
+import SelectorSesion from '../SelectorSesion.jsx';
+
+const { Header, Content } = AntLayout;
 
 function Layout() {
-  const estiloContenedor = {
-    display: 'flex',
-    minHeight: '100vh', // Asegura que ocupe toda la altura de la pantalla
-    backgroundColor: '#f5f6fa'
-  };
-
-  const estiloContenidoPrincipal = {
-    flex: 1, // Toma todo el espacio sobrante a la derecha
-    padding: '30px',
-    overflowY: 'auto' // Permite hacer scroll solo en el contenido, sin mover el menú
-  };
-
   return (
-    <div style={estiloContenedor}>
-      {/* El menú se queda fijo a la izquierda */}
+    <AntLayout style={{ minHeight: '100vh' }}>
       <Sidebar />
-      
-      {/* El espacio de la derecha donde el enrutador inyectará las páginas */}
-      <main style={estiloContenidoPrincipal}>
-        <Outlet /> 
-      </main>
-    </div>
+      <AntLayout>
+        <Header style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '0 24px', borderBottom: '1px solid #d9e1ec' }}>
+          <SelectorSesion />
+        </Header>
+        <Content style={{ padding: 24 }}>
+          <Outlet />
+        </Content>
+      </AntLayout>
+    </AntLayout>
   );
 }
 

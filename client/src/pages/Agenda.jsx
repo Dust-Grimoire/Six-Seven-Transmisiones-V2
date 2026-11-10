@@ -1,14 +1,7 @@
-import React from 'react';
-
-import EnConstrucción from '../components/ui/EnConstruccion';
+import EnConstruccion from '../components/ui/EnConstruccion.jsx';
 
 function Agenda() {
-  return (
-    <div>
-      <h1>Agenda</h1>
-      <EnConstrucción nombreModulo="Agenda"/>
-    </div>
-  );
+  return <EnConstruccion nombreModulo="Agenda" />;
 }
 
 export default Agenda;
