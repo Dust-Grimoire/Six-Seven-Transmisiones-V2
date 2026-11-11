@@ -1,37 +1,35 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { Layout, Menu, Typography } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useSesion } from '../../context/SesionContext.jsx';
+import { modulosDelRol } from '../../utils/modulos.js';
 
 function Sidebar() {
-  // Estilo básico de columna a la izquierda
-  const estiloBarra = {
-    width: '250px',
-    height: '100vh',
-    backgroundColor: '#f8f9fa',
-    borderRight: '1px solid #ddd',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px'
-  };
+  const { usuario } = useSesion();
+  const navegar = useNavigate();
+  const { pathname } = useLocation();
 
-  const estiloEnlace = {
-    textDecoration: 'none',
-    color: '#333',
-    fontSize: '16px',
-    padding: '10px',
-    borderRadius: '5px'
-  };
+  const items = modulosDelRol(usuario?.rol).map(({ ruta, etiqueta, Icono }) => ({
+    key: ruta,
+    icon: <Icono />,
+    label: etiqueta,
+  }));
 
   return (
-    <nav style={estiloBarra}>
-      <Link style={estiloEnlace} to="/tablero">📋Tablero</Link>
-      <Link style={estiloEnlace} to="/agenda">📅Agenda</Link>
-      <Link style={estiloEnlace} to="/personal">💼Personal</Link>
-      <Link style={estiloEnlace} to="/inventario">📦Inventario</Link>
-      <Link style={estiloEnlace} to="/financiero">🏦Financiero</Link>
-      <Link style={estiloEnlace} to="/auspicios">📢Auspicios</Link>
-      <Link style={estiloEnlace} to="/usuarios">👥Usuarios</Link>
-    </nav>
+    <Layout.Sider width={230} breakpoint="lg" collapsedWidth={0}>
+      <Typography.Title level={4} style={{ color: '#ffffff', padding: '20px 24px 8px', margin: 0 }}>
+        Sixseven
+      </Typography.Title>
+      <Typography.Text style={{ color: '#9fb3cc', padding: '0 24px', display: 'block', marginBottom: 16 }}>
+        Transmisiones
+      </Typography.Text>
+      <Menu
+        theme="dark"
+        mode="inline"
+        selectedKeys={[`/${pathname.split('/')[1]}`]}
+        items={items}
+        onClick={({ key }) => navegar(key)}
+      />
+    </Layout.Sider>
   );
 }
 

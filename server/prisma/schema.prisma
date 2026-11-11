@@ -1,4 +1,3 @@
-// Prisma Schema
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,4 +5,605 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  DUENO
+  CONTADOR
+  JEFE_TECNICO
+}
+
+enum TipoEvento {
+  DEPORTIVO
+  ACADEMICO
+  CULTURAL
+  CORPORATIVO
+}
+
+enum TipoServicio {
+  BASICO
+  COMPLEJO
+}
+
+enum EstadoTransmision {
+  COTIZADA
+  AUTORIZADA
+  FINALIZADA
+}
+
+enum TipoPago {
+  GARANTIA
+  COBRO
+}
+
+enum EstadoAsignacion {
+  POR_CONFIRMAR
+  CONFIRMADA
+  RECHAZADA
+}
+
+enum TipoEquipo {
+  CAMARA
+  TRIPODE
+  MICROFONO
+  SWITCH
+  OTRO
+}
+
+enum EstadoEquipo {
+  OPERATIVO
+  EN_REPARACION
+  RESERVADO
+  EN_TERRENO
+  EN_MERMA
+  DADO_DE_BAJA
+}
+
+enum CausaBaja {
+  DANO
+  ROBO
+  EXTRAVIO
+}
+
+enum EstadoRetorno {
+  RECIBIDO
+  DANADO
+  PERDIDO
+}
+
+enum TipoRepuesto {
+  CABLE
+  CONECTOR
+  ACCESORIO
+  OTRO
+}
+
+enum TipoMovimiento {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
+enum CategoriaGasto {
+  PEAJE
+  COLACION
+  IMPREVISTO
+}
+
+enum EstadoReembolso {
+  APROBADO
+  RECHAZADO
+}
+
+enum EstadoLinea {
+  PENDIENTE
+  PAGADA
+}
+
+enum TipoAporte {
+  MONETARIO
+  CANJE
+}
+
+enum EstadoAcuerdo {
+  PENDIENTE
+  CUMPLIDO
+}
+
+enum AccionListaNegra {
+  MARCADO
+  REGULARIZADO
+}
+
+model Usuario {
+  id             Int      @id @default(autoincrement())
+  nombre         String   @db.VarChar(100)
+  correo         String   @unique @db.VarChar(120)
+  contrasenaHash String   @db.VarChar(100)
+  rol            Rol
+  activo         Boolean  @default(true)
+  creadoEn       DateTime @default(now())
+  actualizadoEn  DateTime @updatedAt
+
+  auditorias            RegistroAuditoria[]
+  comprobantes          Comprobante[]
+  transmisionesCreadas  Transmision[]           @relation("TransmisionCreadaPor")
+  transmisionesAutoriz  Transmision[]           @relation("TransmisionAutorizadaPor")
+  pagos                 Pago[]
+  historialesEquipo     HistorialEstadoEquipo[]
+  bajas                 Baja[]
+  movimientosRepuesto   MovimientoRepuesto[]
+  asignacionesKit       AsignacionKit[]
+  gastos                Gasto[]
+  reembolsos            Reembolso[]
+  pagosStarlink         PagoStarlink[]
+  liquidaciones         Liquidacion[]
+  lineasPagadas         LineaLiquidacion[]
+  acuerdos              AcuerdoAuspicio[]
+  historialesListaNegra HistorialListaNegra[]
+
+  @@map("usuarios")
+}
+
+model RegistroAuditoria {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  accion    String   @db.VarChar(60)
+  entidad   String   @db.VarChar(60)
+  entidadId Int
+  detalle   String?  @db.Text
+  ip        String   @db.VarChar(64)
+  fechaHora DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([entidad, entidadId])
+  @@map("registros_auditoria")
+}
+
+model Parametro {
+  clave       String @id @db.VarChar(60)
+  valor       String @db.VarChar(200)
+  descripcion String @db.VarChar(200)
+
+  @@map("parametros")
+}
+
+model Comprobante {
+  id             Int      @id @default(autoincrement())
+  nombreOriginal String   @db.VarChar(200)
+  nombreArchivo  String   @unique @db.VarChar(200)
+  tipoMime       String   @db.VarChar(100)
+  tamanoBytes    Int
+  subidoPorId    Int
+  subidoEn       DateTime @default(now())
+
+  subidoPor    Usuario       @relation(fields: [subidoPorId], references: [id], onDelete: Restrict)
+  pago         Pago?
+  gasto        Gasto?
+  reembolso    Reembolso?
+  pagoStarlink PagoStarlink?
+
+  @@map("comprobantes")
+}
+
+model Cliente {
+  id       Int     @id @default(autoincrement())
+  nombre   String  @unique @db.VarChar(120)
+  contacto String? @db.VarChar(120)
+  telefono String? @db.VarChar(20)
+
+  transmisiones Transmision[]
+
+  @@map("clientes")
+}
+
+model Funcion {
+  id                 Int    @id @default(autoincrement())
+  nombre             String @unique @db.VarChar(40)
+  tarifaHora         Int
+  porcentajeComision Float
+
+  requerimientos    RequerimientoFuncion[]
+  colaboradores     ColaboradorFuncion[]
+  asignaciones      Asignacion[]           @relation("FuncionAsignada")
+  asignacionesEfect Asignacion[]           @relation("FuncionEfectiva")
+  lineasLiquidacion LineaLiquidacion[]
+
+  @@map("funciones")
+}
+
+model Transmision {
+  id                   Int               @id @default(autoincrement())
+  nombreEvento         String            @db.VarChar(150)
+  clienteId            Int
+  tipoEvento           TipoEvento
+  tipoServicio         TipoServicio
+  recinto              String            @db.VarChar(150)
+  comuna               String            @db.VarChar(80)
+  inicio               DateTime
+  fin                  DateTime
+  cantidadKits         Int
+  kitsUltimaGeneracion Boolean           @default(false)
+  valorBase            Int
+  recargo              Int
+  valorTotal           Int
+  estado               EstadoTransmision @default(COTIZADA)
+  creadoPorId          Int
+  autorizadoPorId      Int?
+  autorizadoEn         DateTime?
+  cerradoEn            DateTime?
+  creadoEn             DateTime          @default(now())
+
+  cliente         Cliente                @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  creadoPor       Usuario                @relation("TransmisionCreadaPor", fields: [creadoPorId], references: [id], onDelete: Restrict)
+  autorizadoPor   Usuario?               @relation("TransmisionAutorizadaPor", fields: [autorizadoPorId], references: [id], onDelete: Restrict)
+  requerimientos  RequerimientoFuncion[]
+  pagos           Pago[]
+  asignaciones    Asignacion[]
+  asignacionesKit AsignacionKit[]
+  bajas           Baja[]
+  movimientos     MovimientoRepuesto[]
+  gastos          Gasto[]
+  reembolsos      Reembolso[]
+  lineas          LineaLiquidacion[]
+  acuerdos        AcuerdoAuspicio[]
+
+  @@index([inicio])
+  @@map("transmisiones")
+}
+
+model RequerimientoFuncion {
+  transmisionId Int
+  funcionId     Int
+  cantidad      Int
+
+  transmision Transmision @relation(fields: [transmisionId], references: [id], onDelete: Cascade)
+  funcion     Funcion     @relation(fields: [funcionId], references: [id], onDelete: Restrict)
+
+  @@id([transmisionId, funcionId])
+  @@map("requerimientos_funcion")
+}
+
+model Pago {
+  id              Int      @id @default(autoincrement())
+  transmisionId   Int
+  tipo            TipoPago
+  monto           Int
+  fechaPago       DateTime @db.Date
+  comprobanteId   Int      @unique
+  registradoPorId Int
+  creadoEn        DateTime @default(now())
+
+  transmision   Transmision @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  comprobante   Comprobante @relation(fields: [comprobanteId], references: [id], onDelete: Restrict)
+  registradoPor Usuario     @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  @@map("pagos")
+}
+
+model Colaborador {
+  id       Int     @id @default(autoincrement())
+  nombre   String  @db.VarChar(120)
+  rut      String  @unique @db.VarChar(12)
+  telefono String  @db.VarChar(20)
+  correo   String? @db.VarChar(120)
+  activo   Boolean @default(true)
+
+  funciones         ColaboradorFuncion[]
+  disponibilidades  Disponibilidad[]
+  asignaciones      Asignacion[]
+  asignacionesKit   AsignacionKit[]
+  reembolsos        Reembolso[]
+  lineasLiquidacion LineaLiquidacion[]
+
+  @@map("colaboradores")
+}
+
+model ColaboradorFuncion {
+  colaboradorId Int
+  funcionId     Int
+
+  colaborador Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  funcion     Funcion     @relation(fields: [funcionId], references: [id], onDelete: Restrict)
+
+  @@id([colaboradorId, funcionId])
+  @@map("colaborador_funciones")
+}
+
+model Disponibilidad {
+  id            Int      @id @default(autoincrement())
+  colaboradorId Int
+  inicio        DateTime
+  fin           DateTime
+
+  colaborador Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+
+  @@index([colaboradorId, inicio])
+  @@map("disponibilidades")
+}
+
+model Asignacion {
+  id                 Int              @id @default(autoincrement())
+  transmisionId      Int
+  colaboradorId      Int
+  funcionId          Int
+  porcentajeComision Float
+  estado             EstadoAsignacion @default(POR_CONFIRMAR)
+  asistio            Boolean?
+  funcionEfectivaId  Int?
+  creadoEn           DateTime         @default(now())
+  respondidoEn       DateTime?
+
+  transmision     Transmision @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  colaborador     Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Restrict)
+  funcion         Funcion     @relation("FuncionAsignada", fields: [funcionId], references: [id], onDelete: Restrict)
+  funcionEfectiva Funcion?    @relation("FuncionEfectiva", fields: [funcionEfectivaId], references: [id], onDelete: Restrict)
+
+  @@index([colaboradorId])
+  @@map("asignaciones")
+}
+
+model Kit {
+  id       Int      @id @default(autoincrement())
+  nombre   String   @unique @db.VarChar(60)
+  creadoEn DateTime @default(now())
+
+  equipos      Equipo[]
+  asignaciones AsignacionKit[]
+  bajas        Baja[]
+
+  @@map("kits")
+}
+
+model Equipo {
+  id               Int          @id @default(autoincrement())
+  tipo             TipoEquipo
+  marca            String       @db.VarChar(60)
+  modelo           String       @db.VarChar(80)
+  numeroSerie      String       @unique @db.VarChar(60)
+  fechaIngreso     DateTime     @db.Date
+  valorReposicion  Int
+  ultimaGeneracion Boolean      @default(false)
+  estado           EstadoEquipo @default(OPERATIVO)
+  kitId            Int?
+
+  kit       Kit?                    @relation(fields: [kitId], references: [id], onDelete: SetNull)
+  historial HistorialEstadoEquipo[]
+  baja      Baja?
+  detalles  DetalleSalida[]
+
+  @@map("equipos")
+}
+
+model HistorialEstadoEquipo {
+  id             Int          @id @default(autoincrement())
+  equipoId       Int
+  estadoAnterior EstadoEquipo
+  estadoNuevo    EstadoEquipo
+  observacion    String       @db.VarChar(300)
+  usuarioId      Int
+  fecha          DateTime     @default(now())
+
+  equipo  Equipo  @relation(fields: [equipoId], references: [id], onDelete: Restrict)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@map("historial_estados_equipo")
+}
+
+model Baja {
+  id              Int       @id @default(autoincrement())
+  equipoId        Int       @unique
+  causa           CausaBaja
+  descripcion     String    @db.VarChar(300)
+  transmisionId   Int?
+  kitAnteriorId   Int?
+  valorPerdida    Int
+  registradoPorId Int
+  fecha           DateTime  @default(now())
+
+  equipo        Equipo       @relation(fields: [equipoId], references: [id], onDelete: Restrict)
+  transmision   Transmision? @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  kitAnterior   Kit?         @relation(fields: [kitAnteriorId], references: [id], onDelete: SetNull)
+  registradoPor Usuario      @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  @@map("bajas")
+}
+
+model Repuesto {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique @db.VarChar(100)
+  tipo        TipoRepuesto
+  stock       Int          @default(0)
+  stockMinimo Int          @default(0)
+
+  movimientos MovimientoRepuesto[]
+
+  @@map("repuestos")
+}
+
+model MovimientoRepuesto {
+  id            Int            @id @default(autoincrement())
+  repuestoId    Int
+  tipo          TipoMovimiento
+  cantidad      Int
+  transmisionId Int?
+  usuarioId     Int
+  fecha         DateTime       @default(now())
+
+  repuesto    Repuesto     @relation(fields: [repuestoId], references: [id], onDelete: Restrict)
+  transmision Transmision? @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@map("movimientos_repuesto")
+}
+
+model AsignacionKit {
+  id              Int       @id @default(autoincrement())
+  transmisionId   Int
+  kitId           Int
+  responsableId   Int?
+  salidaEn        DateTime?
+  retornoEn       DateTime?
+  registradoPorId Int
+  creadoEn        DateTime  @default(now())
+
+  transmision   Transmision     @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  kit           Kit             @relation(fields: [kitId], references: [id], onDelete: Restrict)
+  responsable   Colaborador?    @relation(fields: [responsableId], references: [id], onDelete: Restrict)
+  registradoPor Usuario         @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+  detalles      DetalleSalida[]
+
+  @@unique([transmisionId, kitId])
+  @@map("asignaciones_kit")
+}
+
+model DetalleSalida {
+  asignacionKitId Int
+  equipoId        Int
+  estadoRetorno   EstadoRetorno?
+
+  asignacionKit AsignacionKit @relation(fields: [asignacionKitId], references: [id], onDelete: Cascade)
+  equipo        Equipo        @relation(fields: [equipoId], references: [id], onDelete: Restrict)
+
+  @@id([asignacionKitId, equipoId])
+  @@map("detalles_salida")
+}
+
+model Gasto {
+  id              Int            @id @default(autoincrement())
+  transmisionId   Int
+  categoria       CategoriaGasto
+  detalle         String         @db.VarChar(200)
+  monto           Int
+  fecha           DateTime       @db.Date
+  comprobanteId   Int            @unique
+  registradoPorId Int
+  creadoEn        DateTime       @default(now())
+
+  transmision   Transmision @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  comprobante   Comprobante @relation(fields: [comprobanteId], references: [id], onDelete: Restrict)
+  registradoPor Usuario     @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  @@map("gastos")
+}
+
+model Reembolso {
+  id              Int             @id @default(autoincrement())
+  transmisionId   Int
+  colaboradorId   Int
+  origen          String          @db.VarChar(150)
+  destino         String          @db.VarChar(150)
+  montoSolicitado Int
+  montoCaptura    Int?
+  capturaId       Int?            @unique
+  estado          EstadoReembolso
+  motivoRechazo   String?         @db.VarChar(300)
+  registradoPorId Int
+  fecha           DateTime        @default(now())
+
+  transmision   Transmision  @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  colaborador   Colaborador  @relation(fields: [colaboradorId], references: [id], onDelete: Restrict)
+  captura       Comprobante? @relation(fields: [capturaId], references: [id], onDelete: Restrict)
+  registradoPor Usuario      @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  @@map("reembolsos")
+}
+
+model PagoStarlink {
+  id              Int      @id @default(autoincrement())
+  periodo         String   @unique @db.VarChar(7)
+  monto           Int
+  fechaPago       DateTime @db.Date
+  comprobanteId   Int      @unique
+  registradoPorId Int
+  creadoEn        DateTime @default(now())
+
+  comprobante   Comprobante @relation(fields: [comprobanteId], references: [id], onDelete: Restrict)
+  registradoPor Usuario     @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  @@map("pagos_starlink")
+}
+
+model Liquidacion {
+  id            Int      @id @default(autoincrement())
+  periodo       String   @unique @db.VarChar(7)
+  generadaPorId Int
+  generadaEn    DateTime @default(now())
+
+  generadaPor Usuario            @relation(fields: [generadaPorId], references: [id], onDelete: Restrict)
+  lineas      LineaLiquidacion[]
+
+  @@map("liquidaciones")
+}
+
+model LineaLiquidacion {
+  id            Int         @id @default(autoincrement())
+  liquidacionId Int
+  colaboradorId Int
+  transmisionId Int
+  funcionId     Int
+  porcentaje    Float
+  baseCalculo   Int
+  monto         Int
+  estado        EstadoLinea @default(PENDIENTE)
+  pagadaEn      DateTime?
+  pagadaPorId   Int?
+
+  liquidacion Liquidacion @relation(fields: [liquidacionId], references: [id], onDelete: Cascade)
+  colaborador Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Restrict)
+  transmision Transmision @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  funcion     Funcion     @relation(fields: [funcionId], references: [id], onDelete: Restrict)
+  pagadaPor   Usuario?    @relation(fields: [pagadaPorId], references: [id], onDelete: Restrict)
+
+  @@map("lineas_liquidacion")
+}
+
+model Auspiciador {
+  id           Int     @id @default(autoincrement())
+  nombre       String  @unique @db.VarChar(120)
+  contacto     String? @db.VarChar(120)
+  telefono     String? @db.VarChar(20)
+  enListaNegra Boolean @default(false)
+
+  acuerdos  AcuerdoAuspicio[]
+  historial HistorialListaNegra[]
+
+  @@map("auspiciadores")
+}
+
+model AcuerdoAuspicio {
+  id                Int           @id @default(autoincrement())
+  auspiciadorId     Int
+  transmisionId     Int
+  glosa             String        @db.Text
+  tipoAporte        TipoAporte
+  montoComprometido Int?
+  fechaComprometida DateTime      @db.Date
+  estado            EstadoAcuerdo @default(PENDIENTE)
+  fechaRecepcion    DateTime?     @db.Date
+  montoRecibido     Int?
+  detalleRecibido   String?       @db.VarChar(300)
+  registradoPorId   Int
+  creadoEn          DateTime      @default(now())
+
+  auspiciador   Auspiciador @relation(fields: [auspiciadorId], references: [id], onDelete: Restrict)
+  transmision   Transmision @relation(fields: [transmisionId], references: [id], onDelete: Restrict)
+  registradoPor Usuario     @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  @@map("acuerdos_auspicio")
+}
+
+model HistorialListaNegra {
+  id            Int              @id @default(autoincrement())
+  auspiciadorId Int
+  accion        AccionListaNegra
+  motivo        String           @db.VarChar(300)
+  usuarioId     Int
+  fecha         DateTime         @default(now())
+
+  auspiciador Auspiciador @relation(fields: [auspiciadorId], references: [id], onDelete: Restrict)
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@map("historial_lista_negra")
 }
